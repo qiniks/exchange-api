@@ -15,7 +15,7 @@ class Currency(models.Model):
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password, **extra_fields):
         if not username or not password:
-            raise ValueError('The fields must be set')
+            raise ValueError('The fields must be st')
         user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
