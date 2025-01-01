@@ -4,7 +4,7 @@ from .models import Currency, User, Transaction, CashRegister
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
-        fields = ['__all__']
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):

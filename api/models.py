@@ -67,35 +67,45 @@ class CashRegister(models.Model):
     def update_register(self):
         transactions = Transaction.objects.all()
 
-        # Рассчитать общий остаток с учетом покупок и продаж
-        buy_total = transactions.filter(operation_type='buy').aggregate(total=Sum(F('amount') * F('rate')))['total'] or Decimal('0.00')
-        sell_total = transactions.filter(operation_type='sell').aggregate(total=Sum(F('amount') * F('rate')))['total'] or Decimal('0.00')
-
-        # Общий профит по продажам
-        sell_profit = transactions.filter(operation_type='sell').aggregate(
-            profit=Sum(F('amount') * F('rate')) - Sum(F('amount') * F('rate'), filter=Q(operation_type='buy'))
-        )['profit'] or Decimal('0.00')
-
-        # Обновление данных кассы
-        self.total_cash = Decimal('100000.00') - buy_total + sell_total
-        self.total_profit = sell_profit
-
-        # Собираем информацию по каждой валюте
-        self.currency_data = []
+        # Общий список валют
         currencies = Currency.objects.all()
+
+        # Инициализируем данные для кассы
+        self.total_cash = Decimal('100000.00')
+        self.total_profit = Decimal('0.00')
+        self.currency_data = []
+
+        # Обработка каждой валюты
         for currency in currencies:
             currency_transactions = transactions.filter(currency=currency)
 
-            total_bought = currency_transactions.filter(operation_type='buy').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            avg_rate_bought = currency_transactions.filter(operation_type='buy').aggregate(avg_rate=Avg('rate'))['avg_rate'] or Decimal('0.00')
+            # Рассчитываем общие покупки и продажи (количество валюты)
+            total_bought = currency_transactions.filter(operation_type='buy').aggregate(
+                total=Sum('amount')
+            )['total'] or Decimal('0.00')
 
-            total_sold = currency_transactions.filter(operation_type='sell').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            avg_rate_sold = currency_transactions.filter(operation_type='sell').aggregate(avg_rate=Avg('rate'))['avg_rate'] or Decimal('0.00')
+            total_sold = currency_transactions.filter(operation_type='sell').aggregate(
+                total=Sum('amount')
+            )['total'] or Decimal('0.00')
 
-            profit = currency_transactions.filter(operation_type='sell').aggregate(
-                profit=Sum(F('amount') * F('rate')) - Sum(F('amount') * F('rate'), filter=Q(operation_type='buy'))
-            )['profit'] or Decimal('0.00')
+            # Средние курсы покупок и продаж
+            avg_rate_bought = currency_transactions.filter(operation_type='buy').aggregate(
+                avg_rate=Avg('rate')
+            )['avg_rate'] or Decimal('0.00')
 
+            avg_rate_sold = currency_transactions.filter(operation_type='sell').aggregate(
+                avg_rate=Avg('rate')
+            )['avg_rate'] or Decimal('0.00')
+
+            # Профит по валюте
+            profit = total_bought * (avg_rate_sold - avg_rate_bought)
+
+            # Обновление общей кассы и общего профита
+            self.total_cash -= total_bought * avg_rate_bought  # Уменьшение кассы при покупке
+            self.total_cash += total_sold * avg_rate_sold      # Увеличение кассы при продаже
+            self.total_profit += profit
+
+            # Добавляем данные по текущей валюте
             self.currency_data.append({
                 "currency": currency.code,
                 "total_bought": total_bought,
@@ -105,4 +115,6 @@ class CashRegister(models.Model):
                 "profit": profit
             })
 
+        # Сохраняем кассу
         self.save()
+
