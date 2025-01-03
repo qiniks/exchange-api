@@ -28,7 +28,6 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     username = models.CharField(max_length=50, unique=True)
-    date_created = models.DateTimeField(auto_now_add=True)
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
@@ -98,7 +97,7 @@ class CashRegister(models.Model):
             )['avg_rate'] or Decimal('0.00')
 
             # Профит по валюте
-            profit = total_bought * (avg_rate_sold - avg_rate_bought)
+            profit = total_sold * (avg_rate_sold - avg_rate_bought)
 
             # Обновление общей кассы и общего профита
             self.total_cash -= total_bought * avg_rate_bought  # Уменьшение кассы при покупке
@@ -113,7 +112,7 @@ class CashRegister(models.Model):
                 "total_sold": total_sold,
                 "avg_rate_sold": avg_rate_sold,
                 "profit": profit
-            })
+            })  
 
         # Сохраняем кассу
         self.save()

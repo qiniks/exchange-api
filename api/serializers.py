@@ -14,9 +14,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    date = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False) 
+
+    currency = serializers.SlugRelatedField(
+        queryset=Currency.objects.all(),
+        slug_field='code'  # Указываем, что вместо id будет использоваться code
+    )
+
     class Meta:
         model = Transaction
         fields = ['id', 'user', 'currency', 'operation_type', 'amount', 'rate', 'total', 'date']
+
 
 
 class CashRegisterSerializer(serializers.ModelSerializer):
