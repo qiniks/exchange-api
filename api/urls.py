@@ -1,12 +1,17 @@
 from django.urls import path
-from .views import CashRegisterView, ClearDatabaseView, CurrencyListCreateView, DeleteCurrencyView, DeleteTransactionView, DeleteUserView, TransactionUpdateView, UserListCreateView, TransactionListCreateView
+from .views import CashRegisterView, ClearDatabaseView, CurrencyListCreateView, DeleteCurrencyView, DeleteTransactionView, DeleteUserView\
+    , TransactionUpdateView, TransactionListCreateView, UserAuthenticationView, UserListView, UserRegistrationView
 
 urlpatterns = [
     path('currencies/', CurrencyListCreateView.as_view(), name='currency-list-create'),
     path('currencies/delete/<int:currency_id>/', DeleteCurrencyView.as_view(), name='delete-currency'),
 
-    path('users/', UserListCreateView.as_view(), name='user-list-create'),
     path('users/delete/<int:user_id>/', DeleteUserView.as_view(), name='delete-user'),
+
+
+    path('register/', UserRegistrationView.as_view(), name='register'),
+    path('users/', UserListView.as_view(), name='user-list'),
+    path('authenticate/', UserAuthenticationView.as_view(), name='authenticate'),
 
     path('transactions/', TransactionListCreateView.as_view(), name='transaction-list-create'),
     path('transactions/<int:pk>/', TransactionUpdateView.as_view(), name='transaction-update'),

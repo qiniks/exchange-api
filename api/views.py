@@ -2,8 +2,10 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import CashRegister, Currency, User, Transaction
-from .serializers import CashRegisterSerializer, CurrencySerializer, UserSerializer, TransactionSerializer
+from .serializers import CashRegisterSerializer, CurrencySerializer, UserRegistrationSerializer, UserSerializer, TransactionSerializer
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password, check_password
 
 class CurrencyListCreateView(generics.ListCreateAPIView):
     queryset = Currency.objects.all()
@@ -17,16 +19,46 @@ class CurrencyListCreateView(generics.ListCreateAPIView):
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserListCreateView(generics.ListCreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():   
+class UserRegistrationView(APIView):
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
             serializer.save()
-            return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "User registered successfully."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserListView(APIView):
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserAuthenticationView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response(
+                {"error": "Username and password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Простая проверка имени пользователя и пароля
+        try:
+            user = User.objects.get(username=username, password=password)
+            return Response(
+                {"message": "Authentication successful.", "user_id": user.id},
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
 
 
 class TransactionListCreateView(APIView):

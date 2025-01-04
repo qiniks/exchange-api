@@ -10,7 +10,17 @@ class CurrencySerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'password','date_created']
+        fields = ['id', 'username', 'password']
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+
+    def validate(self, data):
+        if User.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError("Username already exists.")
+        return data
 
 
 class TransactionSerializer(serializers.ModelSerializer):
